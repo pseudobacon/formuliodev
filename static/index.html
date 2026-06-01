@@ -409,6 +409,26 @@
                         <div class="vld" id="ad-vld"></div>
                     </div>
                 </div>
+                <!-- Offcloud -->
+                <div class="prov" id="oc-card">
+                    <div class="prov-head" onclick="tog('oc')">
+                        <input type="checkbox" id="oc-on" onclick="event.stopPropagation();tog('oc')">
+                        <span class="prov-name">Offcloud</span>
+                        <span class="prov-tags">
+                            <span class="prov-tag debrid">Debrid</span>
+                            <a href="https://offcloud.com/" target="_blank" class="prov-tag signup" onclick="event.stopPropagation()" title="Sign up for Offcloud">Sign Up ↗</a>
+                        </span>
+                    </div>
+                    <div class="prov-body">
+                        <label for="oc-key">API Key</label>
+                        <div class="iw">
+                            <input type="password" id="oc-key" placeholder="Enter Offcloud API key" autocomplete="off">
+                            <button type="button" class="eye" onclick="toggleVis('oc-key',this)"><i class="fas fa-eye"></i></button>
+                        </div>
+                        <div class="hint">Get your key from <a href="https://offcloud.com/account" target="_blank">offcloud.com/account</a></div>
+                        <div class="vld" id="oc-vld"></div>
+                    </div>
+                </div>
             </div>
 
             <div class="sec-head">
@@ -460,6 +480,7 @@
                         <li><strong>⚡ [TorBox]</strong> - Cached - instant playback</li>
                         <li><strong>[RealDebrid]</strong> - Possibly cached - playback availability may vary</li>
                         <li><strong>[AllDebrid]</strong> - Possibly cached - playback availability may vary</li>
+                        <li><strong>[Offcloud]</strong> - Cached / Downloaded</li>
                         <li><strong>🔗 [P2P]</strong> - Peer-to-peer fallback - speed varies</li>
                     </ul>
                 </div>
@@ -491,7 +512,8 @@ const B = window.location.origin;
 function anyDebridActive() {
     return document.getElementById('tb-on').checked ||
            document.getElementById('rd-on').checked ||
-           document.getElementById('ad-on').checked;
+           document.getElementById('ad-on').checked ||
+           document.getElementById('oc-on').checked;
 }
 
 function updateP2PAvailability() {
@@ -568,6 +590,13 @@ function applyConfigFromURL() {
         setTimeout(() => validateKey('ad', cfg.debrid.ad.apiKey), 700);
     }
 
+    if (cfg.debrid && cfg.debrid.oc && cfg.debrid.oc.apiKey) {
+        document.getElementById('oc-on').checked = true;
+        document.getElementById('oc-card').classList.add('on');
+        document.getElementById('oc-key').value = cfg.debrid.oc.apiKey;
+        setTimeout(() => validateKey('oc', cfg.debrid.oc.apiKey), 900);
+    }
+    
     // Restore P2P only after debrid state is applied, and only if a debrid provider was saved
     if (cfg.enableP2P !== undefined) {
         // Use a small delay so debrid checkboxes are set first
@@ -601,7 +630,7 @@ function toggleVis(id, btn) {
     else { inp.type = 'password'; ico.className = 'fas fa-eye'; }
 }
 
-let tbTimer, rdTimer, adTimer;
+let tbTimer, rdTimer, adTimer, ocTimer;
 
 document.getElementById('tb-key').addEventListener('input', function() {
     clearTimeout(tbTimer);
@@ -627,6 +656,14 @@ document.getElementById('ad-key').addEventListener('input', function() {
     adTimer = setTimeout(() => validateKey('ad', v), 600);
 });
 
+document.getElementById('oc-key').addEventListener('input', function() {
+    clearTimeout(ocTimer);
+    const v = this.value.trim();
+    const el = document.getElementById('oc-vld');
+    if (!v) { el.className = 'vld'; el.textContent = ''; return; }
+    ocTimer = setTimeout(() => validateKey('oc', v), 600);
+}); 
+
 function validateKey(provider, key) {
     const el = document.getElementById(provider + '-vld');
     el.className = 'vld wait';
@@ -647,6 +684,8 @@ function validateKey(provider, key) {
                 el.innerHTML = '<i class="fas fa-check-circle"></i> Valid - ' + (d.username || '') + ' (' + (d.type || 'free') + ')';
             } else if (provider === 'ad') {
                 el.innerHTML = '<i class="fas fa-check-circle"></i> Valid - ' + (d.username || '') + ' (' + (d.type || 'free') + ')';
+            } else if (provider === 'oc') {
+                el.innerHTML = '<i class="fas fa-check-circle"></i> Valid';
             }
         } else {
             el.className = 'vld err';
@@ -664,15 +703,18 @@ function generate() {
     const tbOn = document.getElementById('tb-on').checked;
     const rdOn = document.getElementById('rd-on').checked;
     const adOn = document.getElementById('ad-on').checked;
+    const ocOn = document.getElementById('oc-on').checked;
     const p2p  = document.getElementById('p2p-on').checked;
     const tbKey = document.getElementById('tb-key').value.trim();
     const rdKey = document.getElementById('rd-key').value.trim();
     const adKey = document.getElementById('ad-key').value.trim();
-
+    const ocKey = document.getElementById('oc-key').value.trim();
+    
     if (tbOn && !tbKey) { alert('Please enter your TorBox API key.'); return; }
     if (rdOn && !rdKey) { alert('Please enter your Real-Debrid API token.'); return; }
     if (adOn && !adKey) { alert('Please enter your AllDebrid API key.'); return; }
-    if (!tbOn && !rdOn && !adOn && !p2p) { alert('Enable at least one provider or P2P.'); return; }
+    if (ocOn && !ocKey) { alert('Please enter your Offcloud API key.'); return; }
+    if (!tbOn && !rdOn && !adOn && !ocOn && !p2p) { alert('Enable at least one provider or P2P.'); return; }
 
     btn.disabled = true;
     btn.innerHTML = '<span class="spin"></span> Generating...';
@@ -682,7 +724,8 @@ function generate() {
         if (tbOn && tbKey) cfg.debrid.tb = { apiKey: tbKey };
         if (rdOn && rdKey) cfg.debrid.rd = { apiKey: rdKey };
         if (adOn && adKey) cfg.debrid.ad = { apiKey: adKey };
-
+        if (ocOn && ocKey) cfg.debrid.oc = { apiKey: ocKey };
+        
         const b64  = btoa(JSON.stringify(cfg));
         const mUrl = B + '/' + b64 + '/manifest.json';
         const sUrl = mUrl.replace(/^https?:\/\//, 'stremio://');
