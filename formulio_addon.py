@@ -29,7 +29,11 @@ logger.setLevel(logging.INFO)
 
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(formatter)
-logger.addHandler(console_handler)
+
+if not logger.handlers:
+    logger.addHandler(console_handler)
+
+logger.propagate = False
 
 PYTHON_EXE = sys.executable
 
@@ -59,10 +63,13 @@ _oc_requestid_lock = threading.Lock()
 _oc_inflight_locks: dict = {}
 _oc_inflight_locks_guard = threading.Lock()
 
+videos_reload_lock = threading.Lock()
+last_videos_reload_time = 0.0
+
 OC_PENDING = '__PENDING__'
 OC_ERROR = '__ERROR__'
 OC_CANCELED = '__CANCELED__'
-OC_UNAVAILABLE = '__UNAVAILABLE__'  # keep only if you still want a hard sentinel
+OC_UNAVAILABLE = '__UNAVAILABLE__'
 
 OC_REQ_MISS = '__MISS__'
 OC_REQ_ERROR = '__ERROR__'
@@ -285,27 +292,43 @@ def oc_explore_archive(api_key: str, request_id: str):
         logger.error(f"OC explore archive error: {e}")
         return []
 
-def _oc_pick_file_link(links: list, file_idx, filename):
+def _oc_pick_file_link(links: list, fileidx, filename):
     if not links:
+        return None
+
+    def extract_link_value(item):
+        if isinstance(item, str):
+            return item
+        if isinstance(item, dict):
+            for key in ("url", "link", "href", "downloadUrl", "downloadURL", "originalLink"):
+                value = item.get(key)
+                if isinstance(value, str) and value.strip():
+                    return value
         return None
 
     if filename:
         filename = urllib.parse.unquote(filename).strip().lower()
         for link in links:
-            if filename in urllib.parse.unquote(link).lower():
-                return link
+            link_value = extract_link_value(link)
+            if link_value and filename in urllib.parse.unquote(link_value).strip().lower():
+                return link_value
 
-    if file_idx is not None and 0 <= file_idx < len(links):
-        return links[file_idx]
+    if fileidx is not None and 0 <= fileidx < len(links):
+        chosen = extract_link_value(links[fileidx])
+        if chosen:
+            return chosen
 
-    video_exts = ('.mkv', '.mp4', '.avi', '.mov', '.m4v', '.ts', '.flv', '.wmv', '.webm')
-    videos = [
-        link for link in links
-        if link.lower().endswith(video_exts)
-        or any(f"{ext}?" in link.lower() for ext in video_exts)
-    ]
-    candidates = videos if videos else links
+    videoexts = ('.mkv', '.mp4', '.avi', '.mov', '.m4v', '.ts', '.flv', '.wmv', '.webm')
+    videos = []
+    for link in links:
+        link_value = extract_link_value(link)
+        if not link_value:
+            continue
+        lowered = link_value.lower()
+        if lowered.endswith(videoexts) or any(f"{ext}?" in lowered for ext in videoexts):
+            videos.append(link_value)
 
+    candidates = videos if videos else [extract_link_value(link) for link in links if extract_link_value(link)]
     return candidates[0] if candidates else None
 
 def oc_cache_info(api_key: str, info_hash: str, include_files: bool = False):
@@ -342,7 +365,18 @@ def _oc_resolve_downloaded_response(api_key: str, request_id: str, file_idx, fil
     if not status_data:
         return OC_ERROR, None
 
-    status = (status_data.get("status") or "").lower()
+    raw_status = status_data.get("status", "")
+    if isinstance(raw_status, str):
+        status = raw_status.strip().lower()
+    elif isinstance(raw_status, dict):
+        status = str(
+            raw_status.get("status")
+            or raw_status.get("state")
+            or raw_status.get("type")
+            or ""
+        ).strip().lower()
+    else:
+        status = str(raw_status).strip().lower()
 
     if status == "downloaded":
         explored = oc_explore_archive(api_key, request_id)
@@ -351,7 +385,7 @@ def _oc_resolve_downloaded_response(api_key: str, request_id: str, file_idx, fil
             return picked, status
 
         direct_url = status_data.get("url")
-        if direct_url:
+        if isinstance(direct_url, str) and direct_url.strip():
             return direct_url, status
 
         return OC_UNAVAILABLE, status
@@ -365,6 +399,7 @@ def _oc_resolve_downloaded_response(api_key: str, request_id: str, file_idx, fil
     if status == "canceled":
         return OC_CANCELED, status
 
+    logger.warning(f"OC unknown status payload for request_id={request_id}: {str(raw_status)[:200]}")
     return OC_UNAVAILABLE, status
 
 def _oc_get_request_id(api_key: str, info_hash: str, requestid_key: str, allow_lookup: bool):
@@ -408,7 +443,19 @@ def _oc_handle_add_response(api_key: str, info_hash: str, requestid_key: str,
         return OC_ERROR, None
 
     request_id = added.get("requestId")
-    status = (added.get("status") or "").lower()
+
+    raw_status = added.get("status", "")
+    if isinstance(raw_status, str):
+        status = raw_status.strip().lower()
+    elif isinstance(raw_status, dict):
+        status = str(
+            raw_status.get("status")
+            or raw_status.get("state")
+            or raw_status.get("type")
+            or ""
+        ).strip().lower()
+    else:
+        status = str(raw_status).strip().lower()
 
     if not request_id:
         return OC_ERROR, None
@@ -1513,7 +1560,6 @@ def load_all_videos():
             else:
                 logger.warning(f"No videos for '{series['name']}' and none cached ({video_file})")
 
-
 # ═══════════════════════════════════════════════════════════════════════════
 # CSV Health Monitoring
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1607,6 +1653,8 @@ def run_script(directory: str) -> bool:
 
 
 def run_pipeline_and_reload(directory: str) -> bool:
+    global last_videos_reload_time
+
     csv_path = os.path.join(directory, '6processed.csv')
     backup_path = os.path.join(directory, '6processed.csv.backup')
 
@@ -1655,7 +1703,6 @@ def run_pipeline_and_reload(directory: str) -> bool:
 
     return False
 
-
 def run_pipeline_batch(batch: list, batch_name: str):
     logger.info(f"--- Running pipeline batch '{batch_name}' ({len(batch)} scripts) ---")
     threads = []
@@ -1679,15 +1726,16 @@ def run_scripts_in_loop():
         logger.info(f"--- Script loop complete. Sleeping {config.SCRIPT_INTERVAL}s ---")
         time.sleep(config.SCRIPT_INTERVAL)
 
-
 def csv_watcher_loop():
-    csv_mod_times: dict = {}
+    global last_videos_reload_time
+    csv_mod_times = {}
     for series in CATALOG['series']:
         path = series.get('videoFile')
         if path and os.path.exists(path):
             csv_mod_times[path] = os.path.getmtime(path)
 
     logger.info("CSV watcher started")
+
     while True:
         time.sleep(30)
         try:
@@ -1707,11 +1755,16 @@ def csv_watcher_loop():
                     logger.info(f"CSV watcher detected change: {path}")
 
             if changed:
-                logger.info("CSV watcher reloading all videos...")
-                load_all_videos()
+                with videos_reload_lock:
+                    if time.time() - last_videos_reload_time < 10:
+                        logger.info("CSV watcher skipping reload; pipeline reload happened recently")
+                    else:
+                        logger.info("CSV watcher reloading all videos...")
+                        load_all_videos()
+                        last_videos_reload_time = time.time()
+
         except Exception as e:
             logger.error(f"CSV watcher error: {e}")
-
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Stream Building
@@ -2415,12 +2468,14 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, graceful_shutdown)
 
     try:
-        load_all_videos()
+        with videos_reload_lock:
+            load_all_videos()
+            last_videos_reload_time = time.time()
     except Exception as e:
         logger.error(f"Error loading initial video data: {e}")
 
     Thread(target=run_scripts_in_loop, daemon=True).start()
     Thread(target=csv_watcher_loop, daemon=True).start()
 
-    logger.info(f"Formulio addon starting (Python: {PYTHON_EXE})")
+    logger.info(f"Formulio addon starting - Python {PYTHON_EXE}")
     app.run(host='0.0.0.0', port=8000)
