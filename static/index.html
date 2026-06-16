@@ -81,6 +81,41 @@
             font-size: 0.82em; color: #bbb; line-height: 1.5;
         }
 
+        /* ── Sponsor Banner ───────────────────────────────────────────
+           To hide: add the `hidden` attribute to the .sponsor-bx div.
+           The [hidden] rule below ensures no gap or box is left behind.
+        ────────────────────────────────────────────────────────────── */
+        .sponsor-bx[hidden] { display: none; }
+        .sponsor-bx {
+            background: rgba(255,255,255,0.025);
+            border: 1px solid rgba(100,220,130,0.20);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-top: 20px;
+            text-align: left;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .sponsor-bx i {
+            color: #66cc88;
+            margin-top: 2px;
+            flex-shrink: 0;
+            font-size: 0.95em;
+        }
+        .sponsor-bx-text {
+            font-size: 0.82em;
+            color: #888;
+            line-height: 1.6;
+        }
+        .sponsor-bx-text strong { color: #aaa; }
+        .sponsor-bx-text a {
+            color: #66cc88;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .sponsor-bx-text a:hover { color: #88ffaa; text-decoration: underline; }
+
         .sec-head {
             display: flex; align-items: center; gap: 10px;
             border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -344,6 +379,22 @@
         </div>
 
         <form onsubmit="return false;">
+
+            <!-- ═══════════════════════════════════════════════════════
+                 Sponsor Banner
+                 To hide with zero visual footprint, add the `hidden`
+                 attribute to this div:  <div class="sponsor-bx" hidden>
+            ═══════════════════════════════════════════════════════════ -->
+            <div class="sponsor-bx" id="sponsor-banner">
+                <i class="fas fa-heart"></i>
+                <div class="sponsor-bx-text">
+                    <strong>Big thanks to <a href="https://store.elfhosted.com/?utm_source=formulio&amp;utm_medium=landing&amp;utm_campaign=sponsor" target="_blank">ElfHosted</a></strong>
+                    for donating a server for this addon.<br>
+                    New to Stremio addons? Start with their <a href="https://stremio-addons-guide.elfhosted.com/?utm_source=formulio&amp;utm_medium=landing&amp;utm_campaign=guide" target="_blank">free addons guide ↗</a>.<br>
+                    Want managed addons of your own? Browse the <a href="https://store.elfhosted.com/product-category/stremio-addons/?utm_source=formulio&amp;utm_medium=landing&amp;utm_campaign=upgrade" target="_blank">Stremio addon catalogue ↗</a>.
+                </div>
+            </div>
+
             <div class="sec-head">
                 <i class="fas fa-bolt"></i> Debrid Providers
             </div>
@@ -354,7 +405,6 @@
                         <input type="checkbox" id="tb-on" onclick="event.stopPropagation();tog('tb')">
                         <span class="prov-name">TorBox</span>
                         <span class="prov-tags">
-                            <span class="prov-tag recommended">★ Recommended</span>
                             <span class="prov-tag debrid">Debrid</span>
                             <a href="https://torbox.app/subscription?referral=bfb5f62c-6a15-4fea-870c-babd8990f691" target="_blank" class="prov-tag signup" onclick="event.stopPropagation()" title="Using this link to sign up will give me and you 7 days free debrid per number of months purchased at initial signup ❤️">Sign Up ↗</a>
                         </span>
@@ -369,24 +419,24 @@
                         <div class="vld" id="tb-vld"></div>
                     </div>
                 </div>
-                <!-- Real-Debrid -->
-                <div class="prov" id="rd-card">
-                    <div class="prov-head" onclick="tog('rd')">
-                        <input type="checkbox" id="rd-on" onclick="event.stopPropagation();tog('rd')">
-                        <span class="prov-name">Real-Debrid</span>
+                <!-- Premiumize -->
+                <div class="prov" id="pm-card">
+                    <div class="prov-head" onclick="tog('pm')">
+                        <input type="checkbox" id="pm-on" onclick="event.stopPropagation();tog('pm')">
+                        <span class="prov-name">Premiumize</span>
                         <span class="prov-tags">
                             <span class="prov-tag debrid">Debrid</span>
-                            <a href="http://real-debrid.com/?id=9851709" target="_blank" class="prov-tag signup" onclick="event.stopPropagation()" title="Using this link to sign up will give you 5 days free debrid ❤️">Sign Up ↗</a>
+                            <a href="https://www.premiumize.me/" target="_blank" class="prov-tag signup" onclick="event.stopPropagation()" title="Sign up for Premiumize">Sign Up ↗</a>
                         </span>
                     </div>
                     <div class="prov-body">
-                        <label for="rd-key">API Token</label>
+                        <label for="pm-key">API Key</label>
                         <div class="iw">
-                            <input type="password" id="rd-key" placeholder="Enter Real-Debrid API token" autocomplete="off">
-                            <button type="button" class="eye" onclick="toggleVis('rd-key',this)"><i class="fas fa-eye"></i></button>
+                            <input type="password" id="pm-key" placeholder="Enter Premiumize API key" autocomplete="off">
+                            <button type="button" class="eye" onclick="toggleVis('pm-key',this)"><i class="fas fa-eye"></i></button>
                         </div>
-                        <div class="hint">Get your token from <a href="https://real-debrid.com/apitoken" target="_blank">real-debrid.com/apitoken</a></div>
-                        <div class="vld" id="rd-vld"></div>
+                        <div class="hint">Get your key from <a href="https://www.premiumize.me/account" target="_blank">premiumize.me/account</a></div>
+                        <div class="vld" id="pm-vld"></div>
                     </div>
                 </div>
                 <!-- AllDebrid -->
@@ -409,6 +459,24 @@
                         <div class="vld" id="ad-vld"></div>
                     </div>
                 </div>
+                <!-- Real-Debrid -->
+                <div class="prov" id="rd-card">
+                    <div class="prov-head" onclick="tog('rd')">
+                        <input type="checkbox" id="rd-on" onclick="event.stopPropagation();tog('rd')">
+                        <span class="prov-name">Real-Debrid</span>
+                        <span class="prov-tags">
+                            <span class="prov-tag debrid">Debrid</span>
+                            <a href="http://real-debrid.com/?id=9851709" target="_blank" class="prov-tag signup" onclick="event.stopPropagation()" title="Using this link to sign up will give you 5 days free debrid ❤️">Sign Up ↗</a>
+                        </span>
+                    </div>
+                    <div class="prov-body">
+                        <label for="rd-key">API Token</label>
+                        <div class="iw">
+                            <input type="password" id="rd-key" placeholder="Enter Real-Debrid API token" autocomplete="off">
+                            <button type="button" class="eye" onclick="toggleVis('rd-key',this)"><i class="fas fa-eye"></i></button>
+                        </div>
+                        <div class="hint">Get your token from <a href="https://real-debrid.com/apitoken" target="_blank">real-debrid.com/apitoken</a></div>
+                        <div class="vld" id="rd-vld"></div>
                 <!-- Offcloud -->
                 <div class="prov" id="oc-card">
                     <div class="prov-head" onclick="tog('oc')">
@@ -478,9 +546,15 @@
                     <div class="info-bx-t"><i class="fas fa-info-circle"></i> Stream Types</div>
                     <ul>
                         <li><strong>⚡ [TorBox]</strong> - Cached - instant playback</li>
+<<<<<<< HEAD
                         <li><strong>[RealDebrid]</strong> - Possibly cached - playback availability may vary</li>
                         <li><strong>[AllDebrid]</strong> - Possibly cached - playback availability may vary</li>
                         <li><strong>[Offcloud]</strong> - Cached / Downloaded</li>
+=======
+                        <li><strong>⚡ [RealDebrid]</strong> - Possibly cached - playback availability may vary</li>
+                        <li><strong>⚡ [AllDebrid]</strong> - Possibly cached - playback availability may vary</li>
+                        <li><strong>⚡ [Premiumize]</strong> - Possibly cached - playback availability may vary</li>
+>>>>>>> main
                         <li><strong>🔗 [P2P]</strong> - Peer-to-peer fallback - speed varies</li>
                     </ul>
                 </div>
@@ -513,7 +587,11 @@ function anyDebridActive() {
     return document.getElementById('tb-on').checked ||
            document.getElementById('rd-on').checked ||
            document.getElementById('ad-on').checked ||
+<<<<<<< HEAD
            document.getElementById('oc-on').checked;
+=======
+           document.getElementById('pm-on').checked;
+>>>>>>> main
 }
 
 function updateP2PAvailability() {
@@ -590,6 +668,7 @@ function applyConfigFromURL() {
         setTimeout(() => validateKey('ad', cfg.debrid.ad.apiKey), 700);
     }
 
+<<<<<<< HEAD
     if (cfg.debrid && cfg.debrid.oc && cfg.debrid.oc.apiKey) {
         document.getElementById('oc-on').checked = true;
         document.getElementById('oc-card').classList.add('on');
@@ -597,6 +676,15 @@ function applyConfigFromURL() {
         setTimeout(() => validateKey('oc', cfg.debrid.oc.apiKey), 900);
     }
     
+=======
+    if (cfg.debrid && cfg.debrid.pm && cfg.debrid.pm.apiKey) {
+        document.getElementById('pm-on').checked = true;
+        document.getElementById('pm-card').classList.add('on');
+        document.getElementById('pm-key').value = cfg.debrid.pm.apiKey;
+        setTimeout(() => validateKey('pm', cfg.debrid.pm.apiKey), 900);
+    }
+
+>>>>>>> main
     // Restore P2P only after debrid state is applied, and only if a debrid provider was saved
     if (cfg.enableP2P !== undefined) {
         // Use a small delay so debrid checkboxes are set first
@@ -630,7 +718,11 @@ function toggleVis(id, btn) {
     else { inp.type = 'password'; ico.className = 'fas fa-eye'; }
 }
 
+<<<<<<< HEAD
 let tbTimer, rdTimer, adTimer, ocTimer;
+=======
+let tbTimer, rdTimer, adTimer, pmTimer;
+>>>>>>> main
 
 document.getElementById('tb-key').addEventListener('input', function() {
     clearTimeout(tbTimer);
@@ -656,6 +748,7 @@ document.getElementById('ad-key').addEventListener('input', function() {
     adTimer = setTimeout(() => validateKey('ad', v), 600);
 });
 
+<<<<<<< HEAD
 document.getElementById('oc-key').addEventListener('input', function() {
     clearTimeout(ocTimer);
     const v = this.value.trim();
@@ -663,6 +756,15 @@ document.getElementById('oc-key').addEventListener('input', function() {
     if (!v) { el.className = 'vld'; el.textContent = ''; return; }
     ocTimer = setTimeout(() => validateKey('oc', v), 600);
 }); 
+=======
+document.getElementById('pm-key').addEventListener('input', function() {
+    clearTimeout(pmTimer);
+    const v = this.value.trim();
+    const el = document.getElementById('pm-vld');
+    if (!v) { el.className = 'vld'; el.textContent = ''; return; }
+    pmTimer = setTimeout(() => validateKey('pm', v), 600);
+});
+>>>>>>> main
 
 function validateKey(provider, key) {
     const el = document.getElementById(provider + '-vld');
@@ -684,8 +786,13 @@ function validateKey(provider, key) {
                 el.innerHTML = '<i class="fas fa-check-circle"></i> Valid - ' + (d.username || '') + ' (' + (d.type || 'free') + ')';
             } else if (provider === 'ad') {
                 el.innerHTML = '<i class="fas fa-check-circle"></i> Valid - ' + (d.username || '') + ' (' + (d.type || 'free') + ')';
+<<<<<<< HEAD
             } else if (provider === 'oc') {
                 el.innerHTML = '<i class="fas fa-check-circle"></i> Valid';
+=======
+            } else if (provider === 'pm') {
+                el.innerHTML = '<i class="fas fa-check-circle"></i> Valid - ' + (d.type || 'free');
+>>>>>>> main
             }
         } else {
             el.className = 'vld err';
@@ -703,11 +810,16 @@ function generate() {
     const tbOn = document.getElementById('tb-on').checked;
     const rdOn = document.getElementById('rd-on').checked;
     const adOn = document.getElementById('ad-on').checked;
+<<<<<<< HEAD
     const ocOn = document.getElementById('oc-on').checked;
+=======
+    const pmOn = document.getElementById('pm-on').checked;
+>>>>>>> main
     const p2p  = document.getElementById('p2p-on').checked;
     const tbKey = document.getElementById('tb-key').value.trim();
     const rdKey = document.getElementById('rd-key').value.trim();
     const adKey = document.getElementById('ad-key').value.trim();
+<<<<<<< HEAD
     const ocKey = document.getElementById('oc-key').value.trim();
     
     if (tbOn && !tbKey) { alert('Please enter your TorBox API key.'); return; }
@@ -715,6 +827,15 @@ function generate() {
     if (adOn && !adKey) { alert('Please enter your AllDebrid API key.'); return; }
     if (ocOn && !ocKey) { alert('Please enter your Offcloud API key.'); return; }
     if (!tbOn && !rdOn && !adOn && !ocOn && !p2p) { alert('Enable at least one provider or P2P.'); return; }
+=======
+    const pmKey = document.getElementById('pm-key').value.trim();
+
+    if (tbOn && !tbKey) { alert('Please enter your TorBox API key.'); return; }
+    if (rdOn && !rdKey) { alert('Please enter your Real-Debrid API token.'); return; }
+    if (adOn && !adKey) { alert('Please enter your AllDebrid API key.'); return; }
+    if (pmOn && !pmKey) { alert('Please enter your Premiumize API key.'); return; }
+    if (!tbOn && !rdOn && !adOn && !pmOn && !p2p) { alert('Enable at least one provider or P2P.'); return; }
+>>>>>>> main
 
     btn.disabled = true;
     btn.innerHTML = '<span class="spin"></span> Generating...';
@@ -724,8 +845,13 @@ function generate() {
         if (tbOn && tbKey) cfg.debrid.tb = { apiKey: tbKey };
         if (rdOn && rdKey) cfg.debrid.rd = { apiKey: rdKey };
         if (adOn && adKey) cfg.debrid.ad = { apiKey: adKey };
+<<<<<<< HEAD
         if (ocOn && ocKey) cfg.debrid.oc = { apiKey: ocKey };
         
+=======
+        if (pmOn && pmKey) cfg.debrid.pm = { apiKey: pmKey };
+
+>>>>>>> main
         const b64  = btoa(JSON.stringify(cfg));
         const mUrl = B + '/' + b64 + '/manifest.json';
         const sUrl = mUrl.replace(/^https?:\/\//, 'stremio://');
